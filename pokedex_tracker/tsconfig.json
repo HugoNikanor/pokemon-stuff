@@ -1,0 +1,11 @@
+{
+	"compilerOptions": {
+		"target": "es2017",
+		"allowJs": false,
+		"sourceMap": true,
+		"newLine": "lf",
+		"noEmitOnError": true,
+		"forceConsistentCasingInFileNames": true,
+		"strict": true
+	}
+}

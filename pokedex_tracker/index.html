@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="UTF-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+	<title>Pokédex Tracker</title>
+	<!--
+	<link type="text/css" rel="stylesheet" href="style.css"/>
+	-->
+	<script src="script.js"></script>
+        <style>
+          canvas {
+              /* cursor: url("cursor20.png") 1 18, pointer; */
+              cursor: url("cursor40.png") 2 36, pointer;
+          }
+          .root {
+              display: grid;
+              grid-template-columns: auto 1fr;
+          }
+        </style>
+</head>
+<body>
+  <div class='root'>
+    <main>
+      <canvas width="800" height="800" id="box-canvas"></canvas>
+    </main>
+    <aside>
+      <div id="status"></div>
+    </aside>
+  </div>
+</body>
+</html>
+

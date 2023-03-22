@@ -33,6 +33,8 @@ const box_slot_height = box_height / 5
 const box_x_count = 3
 const box_y_count = 6
 
+let event_pokemon = new Set([151, 251, 385, 386, 490, 491, 492, 493])
+
 const obtained_pokemon = new Set(JSON.parse(window.localStorage.getItem('obtained_pokemon') || '[]'))
 let pokemon_images: { [index: number]: [ImageBitmap, ImageBitmap] }
 
@@ -215,6 +217,7 @@ async function fix_transparency(
     color?: [number, number, number],
 ): Promise<ImageBitmap> {
     ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
     ctx.drawImage(bitmap, 0, 0);
 
     // const imageData = ctx.getImageData(0, 0, sprite_width, sprite_height);
@@ -244,6 +247,7 @@ async function turn_grayscale(
     bitmap: ImageBitmap,
 ): Promise<ImageBitmap> {
     ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
     ctx.drawImage(bitmap, 0, 0);
 
     // const imageData = ctx.getImageData(0, 0, sprite_width, sprite_height);
@@ -267,6 +271,7 @@ async function turn_grayscale(
 
     return createImageBitmap(ctx.canvas, 0, 0, bitmap.width, bitmap.height)
 }
+
 
 async function load_pokemon_sprites(
     ctx: CanvasRenderingContext2D,
@@ -308,6 +313,16 @@ async function load_pokemon_sprites(
                 let icon1_x = x * full_width + (multiple_forms[idx + first] || 1) * full_width - 2 * icon_width - 1;
                 let icon1_y = y * full_height + 1;
 
+                let icon = createImageBitmap(
+                    spritesheet,
+                    icon1_x, icon1_y,
+                    icon_width, icon_height)
+                    .then(x => fix_transparency(ctx, x))
+
+                if (event_pokemon.has(idx + first)) {
+                    icon = icon.then(x => turn_grayscale(ctx, x))
+                }
+
                 items.push([
                     await createImageBitmap(
                         spritesheet,
@@ -315,12 +330,7 @@ async function load_pokemon_sprites(
                         sprite_width, sprite_height)
                         .then(x => fix_transparency(ctx, x))
                         .then(x => turn_grayscale(ctx, x)),
-                    await createImageBitmap(
-                        spritesheet,
-                        icon1_x, icon1_y,
-                        icon_width, icon_height)
-                        .then(x => fix_transparency(ctx, x))
-                    // .then(x => turn_grayscale(ctx, x))
+                    await icon
                 ])
             }
 

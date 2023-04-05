@@ -1,0 +1,91 @@
+name: Build
+on:
+  push:
+    branches:
+      - master
+      
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v3
+      - name: Install build dependencies
+        run: |
+          sudo apt update
+          sudo apt install node-typescript
+      - name: Build Typescript
+        run: tsc
+        working-directory: pokedex_tracker
+      - name: Upload atrifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: pokedex
+          path: pokedex_tracker
+
+          
+  setup_resources:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v3
+      - name: Fetch Dependencies
+        run: |
+          sudo apt update
+          sudo apt install imagemagick
+      - name: Fetch spritesheets
+        run: |
+          curl -OJ 'https://www.spriters-resource.com/download/132561/' & # 1st gen
+          curl -OJ 'https://www.spriters-resource.com/download/132562/' & # 2nd gen
+          curl -OJ 'https://www.spriters-resource.com/download/132563/' & # 3rd gen
+          curl -OJ 'https://www.spriters-resource.com/download/132564/' & # 4th gen
+          curl -OJ 'https://www.spriters-resource.com/download/25637/' & # box system
+          curl -OJ 'https://www.spriters-resource.com/download/6963/' & # font DP
+          curl -OJ 'https://www.spriters-resource.com/download/27044/' & # font HGSS
+      - name: Extract cursor
+        run: sprites/extract-cursor.sh
+      - name: Upload atrifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: sprites
+          path: '*.png'
+ 
+  prepare_page:
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - setup_resources
+    steps:
+      - name: Retrieve build
+        uses: actions/download-artifact@v3
+        with:
+          name: pokedex
+      - name: Retrive Spritesheets
+        uses: actions/download-artifact@v3
+        with:
+          name: sprites
+          path: sprites
+      - name: Show contents
+        run: 'ls -l *'
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v1.0.8
+        with:
+          path: .
+          
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: prepare_page
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
+        with:
+          preview: true

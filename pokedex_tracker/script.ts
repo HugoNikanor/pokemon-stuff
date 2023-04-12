@@ -42,23 +42,11 @@ let pokemon_images: { [index: number]: [ImageBitmap, ImageBitmap] }
 /* 2 is version */
 const storage_key = 'obtained_pokemon2'
 
-/*
-async function base64_arraybuffer(data: Uint8Array) {
-    const base64url: string = await new Promise((r) => {
-        const reader: FileReader = new FileReader()
-        reader.onload = () => r(reader.result)
-        reader.readAsDataURL(new Blob([data]))
-    })
-    return base64url.split(',', 2)[1]
-}
-*/
-
 function hex_encode(arr: Uint8Array): string {
     let s = ''
     for (let c of arr) {
         s += (c >> 4).toString(16)
         s += (c & 0xF).toString(16)
-        // console.log(s)
     }
     return s
 }
@@ -68,11 +56,8 @@ function hex_decode(str: string): Uint8Array {
     let arr = new Uint8Array(len)
     for (let i = 0; i < len; i++) {
         arr[i] = 0
-        // console.log(str[i * 2], str[i * 2 + 1])
         arr[i] |= parseInt(str[i * 2], 16) << 4
         arr[i] |= parseInt(str[i * 2 + 1], 16)
-        // arr[i] = parseInt(str.substr(i * 2, 2), 16)
-        // arr[i] = parseInt(str.substr(i * 2, 2), 16)
     }
     return arr
 }
@@ -102,7 +87,7 @@ function deserialize_save(data: string): Savedata {
     if (typeof data === 'string') {
         const obtained: Savedata = new Set(JSON.parse(data))
         window.localStorage.setItem(storage_key, serialize_save(obtained))
-        // window.localStorage.removeItem('obtained_pokemon')
+        window.localStorage.removeItem('obtained_pokemon')
     }
 }
 
@@ -295,7 +280,6 @@ async function fix_transparency(
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
     ctx.drawImage(bitmap, 0, 0);
 
-    // const imageData = ctx.getImageData(0, 0, sprite_width, sprite_height);
     const imageData = ctx.getImageData(0, 0, bitmap.width, bitmap.height);
     const dat = imageData.data;
     const transparency = color || [dat[0], dat[1], dat[2]];
@@ -325,7 +309,6 @@ async function turn_grayscale(
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
     ctx.drawImage(bitmap, 0, 0);
 
-    // const imageData = ctx.getImageData(0, 0, sprite_width, sprite_height);
     const imageData = ctx.getImageData(0, 0, bitmap.width, bitmap.height);
     const dat = imageData.data;
 
@@ -404,7 +387,6 @@ async function load_pokemon_sprites(
                         front1_x, front1_y,
                         sprite_width, sprite_height)
                         .then(x => fix_transparency(ctx, x))
-                    // .then(x => turn_grayscale(ctx, x))
                     ,
                     await icon
                 ])
@@ -502,9 +484,6 @@ function draw_box(
         x += char_width + letter_spacing;
     }
 }
-
-// 5, 2473
-// 115, 2660
 
 function pos_to_pokemon(gx: number, gy: number): number | false {
     let x = gx % screen_width
@@ -621,7 +600,7 @@ window.addEventListener('load', async function() {
         }
 
         highlightCtx.drawImage(active_bg, 0, 0)
-        // highlightCtx.strokeRect(3, 42, 80, 80)
+
         /* Typescrypt treats !0 as true */
         if (highlightedPokemon !== false) {
             let sprites: [ImageBitmap, ImageBitmap] | undefined = pokemon_images[highlightedPokemon]
@@ -663,7 +642,6 @@ window.addEventListener('load', async function() {
     });
 
     canvas.addEventListener('click', function(e) {
-
         let pkmn = pos_to_pokemon(e.offsetX, e.offsetY)
         /* Typescrypt treats !0 as true */
         if (pkmn === false) return;
@@ -674,7 +652,6 @@ window.addEventListener('load', async function() {
         } else {
             add_pokemon(pkmn);
         }
-        // update_status_bar();
     });
 });
 

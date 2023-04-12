@@ -12,10 +12,24 @@
           canvas {
               cursor: url("sprites/cursor.png") 1 18, pointer;
               /* cursor: url("cursor40.png") 2 36, pointer; */
+              /* border: 1px solid green; */
           }
-          .root {
+          /* .root { */
+          /*     display: grid; */
+          /*     grid-template-columns: auto 1fr; */
+          /* } */
+          main {
               display: grid;
               grid-template-columns: auto 1fr;
+          }
+
+          .sticky-parent {
+              position: relative;
+          }
+
+          .sticky-parent * {
+              position: sticky;
+              top: 0;
           }
         </style>
 </head>
@@ -23,6 +37,9 @@
   <div class='root'>
     <main>
       <canvas width="800" height="800" id="box-canvas"></canvas>
+      <div class="sticky-parent">
+        <canvas width="110" height="187" id="highlight-canvas"></canvas>
+      </div>
     </main>
     <aside>
       <div id="status"></div>

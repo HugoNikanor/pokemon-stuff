@@ -329,7 +329,8 @@ async function load_pokemon_sprites(
                         front1_x, front1_y,
                         sprite_width, sprite_height)
                         .then(x => fix_transparency(ctx, x))
-                        .then(x => turn_grayscale(ctx, x)),
+                    // .then(x => turn_grayscale(ctx, x))
+                    ,
                     await icon
                 ])
             }
@@ -340,7 +341,7 @@ async function load_pokemon_sprites(
 }
 
 async function load_backgrounds(
-): Promise<ImageBitmap[]> {
+): Promise<[ImageBitmap, ImageBitmap[]]> {
     const spritesheet = new Image();
     spritesheet.src = 'sprites/DS DSi - Pokemon Platinum - Box System.png'
     return new Promise((resolve, _) => {
@@ -357,8 +358,11 @@ async function load_backgrounds(
                         screen_height))
                 }
             }
-            items.pop();
-            resolve(items);
+            items.pop(); /* final slot is blank */
+            let active_bg = await createImageBitmap(
+                spritesheet, 5, 2473,
+                110, 188);
+            resolve([active_bg, items]);
         }
     })
 }
@@ -424,14 +428,33 @@ function draw_box(
     }
 }
 
-function update_status_bar() {
-    let status_bar = document.getElementById('status')!;
-    status_bar.textContent = `${493 - obtained_pokemon.size} / 493`
+// 5, 2473
+// 115, 2660
+
+function pos_to_pokemon(gx: number, gy: number): number | false {
+    let x = gx % screen_width
+    let y = gy % screen_height
+
+    let bx = Math.floor(gx / screen_width)
+    let by = Math.floor(gy / screen_height)
+    let box_number = by * box_x_count + bx
+
+    x -= box_offset_side
+    y -= box_offset_top
+
+    if (x < 0 || y < 0 || x >= box_width || y >= box_height) {
+        return false;
+    }
+
+    let sx = Math.round((x - box_slot_width / 2) / box_slot_width)
+    let sy = Math.round((y - box_slot_height / 2) / box_slot_height)
+
+    let idx = Math.max(0, Math.min(30 - 1, sy * 6 + sx))
+
+    return box_number * 30 + idx
 }
 
 window.addEventListener('load', async function() {
-
-    update_status_bar();
 
     pokemon_images = await (async function() {
         const canvas = document.createElement('canvas');
@@ -457,7 +480,7 @@ window.addEventListener('load', async function() {
         return fin
     })()
 
-    let backgrounds = await load_backgrounds();
+    let [active_bg, backgrounds] = await load_backgrounds();
 
     font = await (async function() {
         const canvas = document.createElement('canvas');
@@ -469,6 +492,11 @@ window.addEventListener('load', async function() {
     canvas.width = screen_width * box_x_count
     canvas.height = screen_height * box_y_count
     let ctx = canvas.getContext('2d')!;
+
+    const highlightCanvas = document.getElementById('highlight-canvas') as HTMLCanvasElement
+    let highlightCtx = highlightCanvas.getContext('2d')!
+
+    let highlightedPokemon: number | false = false;
 
     window.setInterval(() => {
         for (let y = 0; y < box_y_count; y++) {
@@ -489,39 +517,62 @@ window.addEventListener('load', async function() {
                     y * screen_height);
             }
         }
+
+        highlightCtx.drawImage(active_bg, 0, 0)
+        // highlightCtx.strokeRect(3, 42, 80, 80)
+        /* Typescrypt treats !0 as true */
+        if (highlightedPokemon !== false) {
+            let sprites: [ImageBitmap, ImageBitmap] | undefined = pokemon_images[highlightedPokemon]
+            if (!sprites) return;
+            let sp: ImageBitmap | null = sprites[0]
+            if (!sp) return
+            highlightCtx.drawImage(sp, 3, 42)
+
+            /* Draw Pokemon name */
+            let letter_spacing = 1
+            {
+                let x = 3
+                let y = 42 + 80 + 7;
+                for (let c of "GIRATINA") {
+                    let sp = font[c] || font['~']
+                    highlightCtx.drawImage(sp, x, y)
+                    x += char_width + letter_spacing;
+                }
+            }
+        }
+        /* Draw pokemon completion count */
+        {
+            let letter_spacing = 1
+            let x = 8
+            let y = 42 + 80 + 46;
+            let remaining = 493 - obtained_pokemon.size
+            for (let c of `${remaining} / 493`) {
+                let sp = font[c] || font['~']
+                highlightCtx.drawImage(sp, x, y)
+                x += char_width + letter_spacing;
+            }
+        }
     },
         1000 / 60)
 
+
+    canvas.addEventListener('mousemove', function(e) {
+        highlightedPokemon = pos_to_pokemon(e.offsetX, e.offsetY)
+    });
+
     canvas.addEventListener('click', function(e) {
-        let gx = e.offsetX
-        let gy = e.offsetY
-        let x = gx % screen_width
-        let y = gy % screen_height
 
-        let bx = Math.floor(gx / screen_width)
-        let by = Math.floor(gy / screen_height)
-        let box_number = by * box_x_count + bx
+        let pkmn = pos_to_pokemon(e.offsetX, e.offsetY)
+        /* Typescrypt treats !0 as true */
+        if (pkmn === false) return;
+        if (pkmn < 0 || pkmn > 492) return;
 
-        x -= box_offset_side
-        y -= box_offset_top
-
-        if (x < 0 || y < 0 || x >= box_width || y >= box_height) return;
-
-        let sx = Math.round((x - box_slot_width / 2) / box_slot_width)
-        let sy = Math.round((y - box_slot_height / 2) / box_slot_height)
-
-        let idx = Math.max(0, Math.min(30 - 1, sy * 6 + sx))
-
-        let pkmn = box_number * 30 + idx
         if (obtained_pokemon.has(pkmn)) {
             remove_pokemon(pkmn);
         } else {
             add_pokemon(pkmn);
         }
-        update_status_bar();
-
-
+        // update_status_bar();
     });
-
 });
 

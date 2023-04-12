@@ -1,1 +1,3 @@
-`cursor.png` manually extracted from box system spritesheet.
+For local development, run
+
+    ln -s ../sprites

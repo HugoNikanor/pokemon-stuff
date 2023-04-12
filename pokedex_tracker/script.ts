@@ -454,6 +454,21 @@ function pos_to_pokemon(gx: number, gy: number): number | false {
     return box_number * 30 + idx
 }
 
+async function setup_favicon() {
+    const canvas = document.createElement('canvas')
+    const sp: ImageBitmap = pokemon_images[Math.floor(Math.random() * 493)][1]
+    canvas.width = sp.width
+    canvas.height = sp.height
+    const ctx = canvas.getContext('2d')!
+    ctx.drawImage(sp, 0, 0)
+    let icon = document.querySelector("link[rel=icon]")
+    if (!icon) {
+        console.warn('No link[rel=icon] element')
+        return
+    }
+    (icon as HTMLLinkElement).href = canvas.toDataURL()
+}
+
 window.addEventListener('load', async function() {
 
     pokemon_images = await (async function() {
@@ -479,6 +494,8 @@ window.addEventListener('load', async function() {
         }
         return fin
     })()
+
+    setup_favicon()
 
     let [active_bg, backgrounds] = await load_backgrounds();
 

@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
+import gzip
 import json
 
+out = {}
 for sub_id in range(493):
     id = sub_id + 1
-    with open(f'{id}.json') as f:
+    with gzip.open(f'{id}.json.gz', 'rt') as f:
         data = json.load(f)
-    name = data['name']
-    print(f'{id},{name}')
+    out[id] = data['name']
+print(out)

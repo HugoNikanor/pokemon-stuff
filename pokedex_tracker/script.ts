@@ -35,10 +35,85 @@ const box_y_count = 6
 
 let event_pokemon = new Set([151, 251, 385, 386, 490, 491, 492, 493])
 
-const obtained_pokemon = new Set(JSON.parse(window.localStorage.getItem('obtained_pokemon') || '[]'))
+type Savedata = Set<number>
+
 let pokemon_images: { [index: number]: [ImageBitmap, ImageBitmap] }
 
-// obtained_pokemon.add(1);
+/* 2 is version */
+const storage_key = 'obtained_pokemon2'
+
+/*
+async function base64_arraybuffer(data: Uint8Array) {
+    const base64url: string = await new Promise((r) => {
+        const reader: FileReader = new FileReader()
+        reader.onload = () => r(reader.result)
+        reader.readAsDataURL(new Blob([data]))
+    })
+    return base64url.split(',', 2)[1]
+}
+*/
+
+function hex_encode(arr: Uint8Array): string {
+    let s = ''
+    for (let c of arr) {
+        s += (c >> 4).toString(16)
+        s += (c & 0xF).toString(16)
+        // console.log(s)
+    }
+    return s
+}
+
+function hex_decode(str: string): Uint8Array {
+    let len = str.length / 2
+    let arr = new Uint8Array(len)
+    for (let i = 0; i < len; i++) {
+        arr[i] = 0
+        // console.log(str[i * 2], str[i * 2 + 1])
+        arr[i] |= parseInt(str[i * 2], 16) << 4
+        arr[i] |= parseInt(str[i * 2 + 1], 16)
+        // arr[i] = parseInt(str.substr(i * 2, 2), 16)
+        // arr[i] = parseInt(str.substr(i * 2, 2), 16)
+    }
+    return arr
+}
+
+function serialize_save(savedata: Savedata): string {
+    const arr = new Uint8Array(Math.ceil(493 / 8))
+    for (let idx of savedata) {
+        arr[Math.floor(idx / 8)] |= (1 << (idx % 8))
+    }
+    return hex_encode(arr)
+}
+
+function deserialize_save(data: string): Savedata {
+    const arr = hex_decode(data)
+    const res: Savedata = new Set()
+    for (let i = 0; i < 493; i++) {
+        if ((arr[Math.floor(i / 8)] & (1 << (i % 8))) !== 0) {
+            res.add(i)
+        }
+    }
+    return res
+}
+
+{
+    /* Upgrade save data from old version */
+    const data = window.localStorage.getItem('obtained_pokemon')
+    if (typeof data === 'string') {
+        const obtained: Savedata = new Set(JSON.parse(data))
+        window.localStorage.setItem(storage_key, serialize_save(obtained))
+        // window.localStorage.removeItem('obtained_pokemon')
+    }
+}
+
+let obtained_pokemon: Savedata = (function() {
+    const data = window.localStorage.getItem(storage_key)
+    if (typeof data === 'string') {
+        return deserialize_save(data)
+    } else {
+        return new Set()
+    }
+})()
 
 type Font = {
     [index: string]: ImageBitmap
@@ -201,12 +276,12 @@ let multiple_forms: { [index: number]: number } = ({
 
 function add_pokemon(no: number) {
     obtained_pokemon.add(no);
-    window.localStorage.setItem('obtained_pokemon', JSON.stringify([...obtained_pokemon]))
+    window.localStorage.setItem(storage_key, serialize_save(obtained_pokemon))
 }
 
 function remove_pokemon(no: number) {
     obtained_pokemon.delete(no)
-    window.localStorage.setItem('obtained_pokemon', JSON.stringify([...obtained_pokemon]))
+    window.localStorage.setItem(storage_key, serialize_save(obtained_pokemon))
 }
 
 /* Replace all pixels in image which match color with transparency.
@@ -467,6 +542,16 @@ async function setup_favicon() {
         return
     }
     (icon as HTMLLinkElement).href = canvas.toDataURL()
+}
+
+function export_save() {
+    const field = document.getElementById('export-field') as HTMLInputElement
+    field.value = serialize_save(obtained_pokemon)
+}
+
+function import_save() {
+    const value = (document.getElementById('export-field') as HTMLInputElement).value
+    obtained_pokemon = deserialize_save(value)
 }
 
 window.addEventListener('load', async function() {

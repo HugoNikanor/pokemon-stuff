@@ -12,16 +12,15 @@ Uses local storage so should be run through a server.
 
 Requires that `sprites` is populated.
 
-Quick update
-------------
+### Quick update
 
 Run these in your JS console. Changes will save once you click
 anything.
 
-### Add all Pokémon
+#### Add all Pokémon
     (function () { for (let i = 0; i < 493; i++) obtained_pokemon.add(i);})()
 
-### Remove all Pokémon
+#### Remove all Pokémon
     obtained_pokemon = new Set()
 
 
